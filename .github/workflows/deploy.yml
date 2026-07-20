@@ -360,7 +360,7 @@ jobs:
     steps:
       - name: Trigger Render staging deploy
         run: |
-          curl -sf -X POST \
+          curl -v -X POST \
             "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_STAGING }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
@@ -431,7 +431,7 @@ jobs:
 
       - name: Trigger Render production deploy
         run: |
-          curl -sf -X POST \
+          curl -v -X POST \
             "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_PROD }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
