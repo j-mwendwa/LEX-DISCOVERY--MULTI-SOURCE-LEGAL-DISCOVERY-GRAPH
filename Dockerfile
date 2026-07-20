@@ -102,8 +102,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
 # Production: 4 Uvicorn workers (override via CMD / docker-compose)
 CMD ["uvicorn", "src.api.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "4", \
+     "--port", "${PORT:-8000}", \
+     "--workers", "1", \
      "--access-log", \
      "--proxy-headers", \
      "--forwarded-allow-ips", "*"]
