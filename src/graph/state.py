@@ -23,6 +23,7 @@ class DiscoveryState(TypedDict, total=False):
     """
     Main state for the Multi-Stage Discovery Pipeline.
     """
+
     # The high-level legal hypothesis from the supervisor
     hypothesis: str
 
@@ -53,6 +54,7 @@ class ClientFilesState(TypedDict):
     """
     State for the isolated Client Files subgraph.
     """
+
     file_path: str
     client_data: ClientData | None
     messages: Annotated[list[BaseMessage], add_messages]
@@ -62,6 +64,7 @@ class CaseLawState(TypedDict):
     """
     State for the isolated Case Law subgraph.
     """
+
     query: str
     results: list[CaseLawResult]
     messages: Annotated[list[BaseMessage], add_messages]

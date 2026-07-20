@@ -10,6 +10,7 @@ Endpoints:
   POST /ingest                        — Ingest case law PDFs into Qdrant
   POST /ingest/upload                 — Upload + ingest PDF files
 """
+
 from __future__ import annotations
 
 import uuid

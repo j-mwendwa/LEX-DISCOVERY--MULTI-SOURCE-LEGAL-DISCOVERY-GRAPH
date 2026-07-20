@@ -4,6 +4,7 @@ src/core/logging.py — Structured logging setup for LEX-DISCOVERY.
 Uses structlog for JSON output in production and pretty-printed output in dev.
 Every log record is bound to the current X-Request-ID via contextvars.
 """
+
 from __future__ import annotations
 
 import logging

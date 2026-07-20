@@ -9,6 +9,7 @@ Flow:
     4. Embed with BAAI/bge-small-en-v1.5
     5. Upsert into Qdrant collection via QdrantVectorStore
 """
+
 from __future__ import annotations
 
 import uuid

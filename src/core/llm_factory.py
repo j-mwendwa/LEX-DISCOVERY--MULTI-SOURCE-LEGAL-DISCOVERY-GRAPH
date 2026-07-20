@@ -10,12 +10,14 @@ Usage:
     llm = get_llm()           # Returns best available LLM
     llm = get_law_llm()       # Always returns law-tuned model with fallback
 """
+
 from __future__ import annotations
 
 from src.config import cfg, settings
 from src.core.logging import get_logger
 
 log = get_logger(__name__)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HuggingFace — Saul Legal AI (primary)
@@ -117,7 +119,9 @@ def get_llm(temperature: float | None = None, use_law_model: bool = True):
         A LangChain-compatible LLM instance.
     """
     temp = temperature if temperature is not None else cfg.get("llm", {}).get("temperature", 0.1)
-    model_id = settings.hf_model_id or cfg.get("llm", {}).get("default_model", "Equall/Saul-7B-Instruct-v1")
+    model_id = settings.hf_model_id or cfg.get("llm", {}).get(
+        "default_model", "Equall/Saul-7B-Instruct-v1"
+    )
     max_new_tokens = cfg.get("llm", {}).get("max_new_tokens", 2048)
 
     if use_law_model and settings.hf_api_key:

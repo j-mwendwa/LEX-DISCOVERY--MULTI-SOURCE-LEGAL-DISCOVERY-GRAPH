@@ -1,6 +1,7 @@
 """
 src/api/schemas.py — Pydantic request/response models for the LEX-DISCOVERY API.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -34,9 +35,7 @@ class DiscoveryStartResponse(BaseModel):
 
     thread_id: str = Field(..., description="Unique ID for this discovery session.")
     status: str = Field(..., description="Current pipeline status.")
-    hypothesis: str | None = Field(
-        default=None, description="Formulated legal hypothesis."
-    )
+    hypothesis: str | None = Field(default=None, description="Formulated legal hypothesis.")
     message: str = Field(default="", description="Human-readable status message.")
 
 
@@ -61,9 +60,7 @@ class DiscoveryStatusResponse(BaseModel):
     thread_id: str
     status: str = Field(
         ...,
-        description=(
-            "One of: RUNNING, AWAITING_REVIEW, APPROVED, REJECTED, COMPLETE, ERROR"
-        ),
+        description=("One of: RUNNING, AWAITING_REVIEW, APPROVED, REJECTED, COMPLETE, ERROR"),
     )
     hypothesis: str | None = None
     client_metadata: dict[str, str] | None = None

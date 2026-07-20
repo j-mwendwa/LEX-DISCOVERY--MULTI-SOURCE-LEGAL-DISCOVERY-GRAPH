@@ -9,6 +9,7 @@ Nodes:
 The subgraph operates on ClientFilesState (isolated from the main graph).
 On completion it returns a fully populated ClientData dict.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -209,9 +210,7 @@ def metadata_extraction_node(state: ClientFilesState) -> dict[str, Any]:
             "lease_end": extracted.metadata.lease_end_date,
             "monthly_rent": extracted.metadata.monthly_rent,
         },
-        "timeline": [
-            {"event": ev.event, "date": ev.date} for ev in extracted.timeline
-        ],
+        "timeline": [{"event": ev.event, "date": ev.date} for ev in extracted.timeline],
         "clauses": extracted.notice_clauses,
     }
 

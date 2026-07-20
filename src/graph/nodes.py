@@ -10,6 +10,7 @@ Nodes:
   generate_verdict        — Synthesises final legal verdict after human approval.
   rejection_node          — Terminates pipeline for invalid / incomplete inputs.
 """
+
 from __future__ import annotations
 
 import json
@@ -181,7 +182,9 @@ def case_law_runner(state: DiscoveryState) -> dict[str, Any]:
 
     log.info("case_law_complete", precedents_found=len(results))
 
-    summary_lines = [f"- {r['title']} ({r['citation']}) — score {r['relevance_score']}" for r in results]
+    summary_lines = [
+        f"- {r['title']} ({r['citation']}) — score {r['relevance_score']}" for r in results
+    ]
     summary_text = "\n".join(summary_lines) if summary_lines else "No precedents found."
 
     return {
@@ -247,9 +250,7 @@ def cross_context_mapping(state: DiscoveryState) -> dict[str, Any]:
     precedents = state.get("case_law_results", [])
     hypothesis = state.get("hypothesis", "")
 
-    timeline_str = "\n".join(
-        f"- {ev.get('date', '?')}: {ev.get('event', '?')}" for ev in timeline
-    )
+    timeline_str = "\n".join(f"- {ev.get('date', '?')}: {ev.get('event', '?')}" for ev in timeline)
     clauses_str = "\n".join(f"- {c}" for c in clauses)
     precedents_str = "\n".join(
         f"- {r['title']} ({r['citation']}): {r['summary']}" for r in precedents
@@ -350,7 +351,11 @@ def human_review(state: DiscoveryState) -> dict[str, Any]:
     human_verdict = interrupt(review_payload)
 
     # After resumption, human_verdict contains the counselor's decision
-    approved = human_verdict.get("verdict_approved", False) if isinstance(human_verdict, dict) else bool(human_verdict)
+    approved = (
+        human_verdict.get("verdict_approved", False)
+        if isinstance(human_verdict, dict)
+        else bool(human_verdict)
+    )
     notes = human_verdict.get("counsel_notes", "") if isinstance(human_verdict, dict) else ""
 
     log.info("human_review_resumed", approved=approved)
@@ -416,7 +421,7 @@ def generate_verdict(state: DiscoveryState) -> dict[str, Any]:
                 notes = msg.content.split("Notes:")[-1].strip()
             break
 
-    gaps_str = "\n".join(f"{i+1}. {g}" for i, g in enumerate(gaps))
+    gaps_str = "\n".join(f"{i + 1}. {g}" for i, g in enumerate(gaps))
     precedents_str = "\n".join(
         f"- {r['title']} ({r['citation']}): {r['summary']}" for r in precedents
     )
@@ -450,7 +455,7 @@ def generate_verdict(state: DiscoveryState) -> dict[str, Any]:
 
 
 def _default_verdict(gaps: list, precedents: list, hypothesis: str) -> str:
-    gaps_text = "\n".join(f"{i+1}. {g}" for i, g in enumerate(gaps))
+    gaps_text = "\n".join(f"{i + 1}. {g}" for i, g in enumerate(gaps))
     prec_text = "\n".join(f"- {r['title']} ({r['citation']})" for r in precedents)
     return f"""## LEGAL DISCOVERY VERDICT MEMO
 

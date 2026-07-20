@@ -1,6 +1,7 @@
 """
 tests/unit/test_nodes.py — Unit tests for graph node functions (mocked LLM).
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch

@@ -8,6 +8,7 @@ Nodes:
 
 The subgraph operates on CaseLawState (isolated from the main graph).
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -76,9 +77,7 @@ def query_generation_node(state: CaseLawState) -> dict[str, Any]:
     return {
         "query": refined_query,
         "messages": [
-            SystemMessage(
-                content=f"Generated {len(queries)} search queries: {'; '.join(queries)}"
-            )
+            SystemMessage(content=f"Generated {len(queries)} search queries: {'; '.join(queries)}")
         ],
     }
 

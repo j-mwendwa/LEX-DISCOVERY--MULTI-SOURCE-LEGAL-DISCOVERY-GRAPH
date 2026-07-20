@@ -6,6 +6,7 @@ Provides:
   - ensure_collection(): idempotent collection creation with dense+sparse vectors
   - hybrid_search(): combines dense ANN + sparse BM25 with reciprocal rank fusion
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -190,12 +191,8 @@ class QdrantVectorStore:
         for p in points:
             vectors: Any = {"": p["vector"]}
             if sv := p.get("sparse_vector"):
-                vectors["bm25"] = SparseVector(
-                    indices=sv["indices"], values=sv["values"]
-                )
-            structs.append(
-                PointStruct(id=p["id"], vector=vectors, payload=p.get("payload", {}))
-            )
+                vectors["bm25"] = SparseVector(indices=sv["indices"], values=sv["values"])
+            structs.append(PointStruct(id=p["id"], vector=vectors, payload=p.get("payload", {})))
 
         client.upsert(collection_name=self.collection_name, points=structs)
         log.info("qdrant_upsert_complete", count=len(structs))
@@ -225,9 +222,7 @@ def _bm25_encode(text: str) -> tuple[list[int], list[float]]:
         vocab[tok] = abs(hash(tok)) % (2**24)
 
     indices = sorted(vocab[tok] for tok in tf)
-    values = [
-        (1 + math.log(tf[tok] / total + 1)) for tok in sorted(tf.keys())
-    ]
+    values = [(1 + math.log(tf[tok] / total + 1)) for tok in sorted(tf.keys())]
     return indices, values
 
 

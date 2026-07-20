@@ -9,6 +9,7 @@ Usage:
 The API key is expected in the X-API-Key HTTP header.
 Keys are compared via SHA-256 hash to avoid timing attacks and plaintext logging.
 """
+
 from __future__ import annotations
 
 import hashlib

@@ -1,6 +1,7 @@
 """
 tests/conftest.py — Shared pytest fixtures for LEX-DISCOVERY tests.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -28,9 +29,7 @@ def sample_client_data() -> ClientData:
             {"event": "Written eviction notice issued (18 days)", "date": "2023-01-05"},
             {"event": "Tenant disputes notice", "date": "2023-01-20"},
         ],
-        "clauses": [
-            "Section 4.2: 30-day written notice required for termination."
-        ],
+        "clauses": ["Section 4.2: 30-day written notice required for termination."],
     }
 
 

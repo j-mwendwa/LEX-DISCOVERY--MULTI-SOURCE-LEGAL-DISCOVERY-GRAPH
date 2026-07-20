@@ -7,6 +7,7 @@ Verifies that the graph:
   3. Generates a verdict after approval.
   4. Routes to rejection on disapproval.
 """
+
 from __future__ import annotations
 
 import os

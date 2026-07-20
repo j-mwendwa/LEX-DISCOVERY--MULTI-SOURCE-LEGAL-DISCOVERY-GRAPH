@@ -8,6 +8,7 @@ Builds and compiles the full 5-stage pipeline:
 
 Persistence: AsyncSqliteSaver (async FastAPI path) / SqliteSaver (sync tests).
 """
+
 from __future__ import annotations
 
 from pathlib import Path

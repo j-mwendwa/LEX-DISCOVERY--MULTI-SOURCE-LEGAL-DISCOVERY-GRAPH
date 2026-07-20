@@ -10,6 +10,7 @@ QdrantVectorStore with:
 This module is the single point of truth for all Qdrant Cloud interactions
 via LlamaIndex. Use it for both ingestion and retrieval.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -50,7 +51,7 @@ class QdrantVectorStoreWrapper:
         self._client = qdrant_client.QdrantClient(
             url=url,
             api_key=api_key or None,
-            prefer_grpc=True,   # gRPC for faster Cloud throughput
+            prefer_grpc=True,  # gRPC for faster Cloud throughput
             timeout=30,
         )
 
@@ -59,7 +60,7 @@ class QdrantVectorStoreWrapper:
             client=self._client,
             collection_name=collection_name,
             enable_hybrid=True,
-            fastembed_sparse_model="Qdrant/bm25",   # Production-grade BM25 local encoder
+            fastembed_sparse_model="Qdrant/bm25",  # Production-grade BM25 local encoder
         )
         log.info("qdrant_indexed_store_initialized", collection=collection_name)
 
@@ -187,9 +188,7 @@ def get_llamaindex_vector_store(
     Returns:
         LlamaIndex QdrantVectorStore instance.
     """
-    col = collection_name or cfg.get("qdrant", {}).get(
-        "collection_name", "case_law_precedents"
-    )
+    col = collection_name or cfg.get("qdrant", {}).get("collection_name", "case_law_precedents")
     sparse_model = cfg.get("qdrant", {}).get("sparse_model", "Qdrant/bm25")
     client = _get_qdrant_client()
 
@@ -222,9 +221,7 @@ def get_wrapper(
     Returns:
         Configured QdrantVectorStoreWrapper ready for upsert and hybrid search.
     """
-    col = collection_name or cfg.get("qdrant", {}).get(
-        "collection_name", "case_law_precedents"
-    )
+    col = collection_name or cfg.get("qdrant", {}).get("collection_name", "case_law_precedents")
     return QdrantVectorStoreWrapper(
         url=settings.qdrant_url,
         api_key=settings.qdrant_api_key or "",
@@ -248,9 +245,7 @@ def get_vector_index(collection_name: str | None = None):
     except ImportError:
         raise ImportError("Install: pip install llama-index-core") from None
 
-    store = get_llamaindex_vector_store(
-        collection_name=collection_name, enable_hybrid=True
-    )
+    store = get_llamaindex_vector_store(collection_name=collection_name, enable_hybrid=True)
     storage_context = StorageContext.from_defaults(vector_store=store)
     index = VectorStoreIndex.from_vector_store(
         vector_store=store,
@@ -286,7 +281,7 @@ def hybrid_search_qdrant(
 
         retriever = index.as_retriever(
             similarity_top_k=top_k,
-            sparse_top_k=top_k * 2,          # Sparse prefetch buffer
+            sparse_top_k=top_k * 2,  # Sparse prefetch buffer
             vector_store_query_mode="hybrid",  # RRF fusion
         )
 
@@ -328,9 +323,7 @@ def ensure_hybrid_collection(collection_name: str | None = None) -> None:
     """
     from qdrant_client.models import Distance, SparseVectorParams, VectorParams
 
-    col = collection_name or cfg.get("qdrant", {}).get(
-        "collection_name", "case_law_precedents"
-    )
+    col = collection_name or cfg.get("qdrant", {}).get("collection_name", "case_law_precedents")
     vector_size = cfg.get("qdrant", {}).get("vector_size", 384)
     client = _get_qdrant_client()
 

@@ -6,6 +6,7 @@ Provides:
   - mock_qdrant_search():   Deterministic mock for tests / offline dev.
   - get_embedder():         HuggingFace bge-small-en-v1.5 embedding helper.
 """
+
 from __future__ import annotations
 
 from src.core.logging import get_logger

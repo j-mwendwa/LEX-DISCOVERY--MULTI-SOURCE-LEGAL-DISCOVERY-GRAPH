@@ -9,6 +9,7 @@ Configures:
 The fastembed backend is used by LlamaIndex's QdrantVectorStore for hybrid
 search without requiring a separate Qdrant sparse model API call.
 """
+
 from __future__ import annotations
 
 from src.core.logging import get_logger
@@ -45,9 +46,7 @@ def setup_llamaindex(
             # Fallback: HuggingFace embedding (requires transformers + torch)
             from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-            Settings.embed_model = HuggingFaceEmbedding(
-                model_name="BAAI/bge-small-en-v1.5"
-            )
+            Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
             log.info(
                 "llamaindex_dense_embed_set",
                 model="BAAI/bge-small-en-v1.5",

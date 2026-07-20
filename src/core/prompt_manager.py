@@ -5,6 +5,7 @@ Usage:
     from src.core.prompt_manager import load_prompt
     system_prompt = load_prompt("lead_attorney", "v1")
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -44,8 +45,7 @@ def load_prompt(name: str, version: str = "v1") -> str:
             return text
 
     raise ConfigError(
-        f"Prompt '{name}' version '{version}' not found. "
-        f"Searched: {[str(c) for c in candidates]}"
+        f"Prompt '{name}' version '{version}' not found. Searched: {[str(c) for c in candidates]}"
     )
 
 

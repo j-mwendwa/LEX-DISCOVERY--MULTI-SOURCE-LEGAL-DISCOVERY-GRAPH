@@ -6,6 +6,7 @@ Usage everywhere:
     # settings -> pydantic Settings (typed, validated, from .env)
     # cfg      -> dict from configs/config.yaml
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
