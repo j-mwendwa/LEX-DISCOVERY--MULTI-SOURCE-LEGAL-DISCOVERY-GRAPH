@@ -1,0 +1,29 @@
+# Environment variables
+.env
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+
+# Python caching & builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.deepeval/
+lex_discovery.egg-info/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
