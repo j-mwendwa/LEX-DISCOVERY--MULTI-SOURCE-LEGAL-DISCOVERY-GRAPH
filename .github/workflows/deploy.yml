@@ -172,7 +172,7 @@ jobs:
           exit-code: 0        # warn-only; set to 1 to block on CRITICAL
 
       - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-fs.sarif
 
@@ -198,6 +198,7 @@ jobs:
       contents:  read
       packages:  write
       id-token:  write   # required for Cosign OIDC signing
+      security-events: write  # required for upload-sarif
 
     outputs:
       # digest is only populated on push (not PR); downstream jobs guard on this
@@ -293,7 +294,7 @@ jobs:
 
       - name: Upload image SARIF
         if: github.event_name != 'pull_request'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-image-api.sarif
 
