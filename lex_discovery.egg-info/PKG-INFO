@@ -1,0 +1,37 @@
+Metadata-Version: 2.4
+Name: lex-discovery
+Version: 1.0.0
+Summary: Multi-Source Legal Discovery Graph — LangGraph + FastAPI + Qdrant
+License: MIT
+Keywords: legal,discovery,langgraph,qdrant,fastapi,rag
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: langgraph>=0.2.0
+Requires-Dist: langchain>=0.3.0
+Requires-Dist: langchain-core>=0.3.0
+Requires-Dist: langchain-google-genai>=2.0.0
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: slowapi>=0.1.9
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pydantic>=2.7.0
+Requires-Dist: pydantic-settings>=2.3.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: structlog>=24.0.0
+Requires-Dist: aiosqlite>=0.20.0
+Requires-Dist: langgraph-checkpoint-sqlite>=2.0.0
+Requires-Dist: qdrant-client>=1.9.0
+Provides-Extra: ingestion
+Requires-Dist: llama-index-core>=0.11.0; extra == "ingestion"
+Requires-Dist: llama-index-readers-file>=0.2.0; extra == "ingestion"
+Requires-Dist: llama-index-embeddings-huggingface>=0.3.0; extra == "ingestion"
+Requires-Dist: llama-index-llms-google-genai>=0.3.0; extra == "ingestion"
+Requires-Dist: torch; extra == "ingestion"
+Requires-Dist: transformers; extra == "ingestion"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: pytest-mock>=3.14.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+Requires-Dist: ruff>=0.4.0; extra == "dev"
+Requires-Dist: mypy>=1.10.0; extra == "dev"

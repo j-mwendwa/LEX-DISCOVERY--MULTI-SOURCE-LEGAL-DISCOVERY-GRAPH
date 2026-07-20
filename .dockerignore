@@ -1,0 +1,66 @@
+# ── Python artefacts ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ── Virtual environments ──────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Testing & coverage ────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.deepeval/
+
+# ── Linting & type-checking ───────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+
+# ── Git & CI ──────────────────────────────────────────────────────────────
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# ── IDE / editor ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Secrets & local config ────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Data directories (mounted as Docker volumes in prod) ──────────────────
+data/uploads/
+data/memory/
+data/checkpoints/
+data/*.db
+
+# ── Documentation & README ────────────────────────────────────────────────
+README.md
+docs/
+*.md
+!chainlit.md
+
+# ── Notebooks ─────────────────────────────────────────────────────────────
+*.ipynb
+.ipynb_checkpoints/
+
+# ── OS artefacts ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

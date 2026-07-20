@@ -1,0 +1,66 @@
+app_env: development
+
+llm:
+  # Primary: HuggingFace law-specialised model (Saul Legal AI)
+  default_model: "Equall/Saul-7B-Instruct-v1"
+  provider: "huggingface"            # huggingface | gemini | openai
+  temperature: 0.1
+  max_new_tokens: 2048
+
+  # Extraction sub-tasks (lighter model)
+  extraction_model: "Equall/Saul-7B-Instruct-v1"
+  extraction_provider: "huggingface"
+
+  # Fallback if HF is unavailable
+  fallback_model: "gemini-2.0-flash"
+  fallback_provider: "gemini"
+
+context:
+  target_context_tokens: 8000
+
+retrieval:
+  top_k: 5
+  similarity_cutoff: 0.0            # Let RRF handle relevance scoring
+  rerank: true
+
+qdrant:
+  # Qdrant Cloud — set QDRANT_URL and QDRANT_API_KEY in .env
+  url: "https://your-cluster.qdrant.tech"
+  collection_name: "case_law_precedents"
+  vector_size: 384
+  hybrid_search: true
+  # fastembed sparse model for BM25 via LlamaIndex
+  sparse_model: "Qdrant/bm25"
+  # Dense embedding model
+  dense_model: "BAAI/bge-small-en-v1.5"
+
+ingestion:
+  chunk_size: 512
+  chunk_overlap: 64
+
+graph:
+  max_iterations: 10
+  human_in_the_loop: true
+
+prompts:
+  version: v1
+  hot_reload: false
+
+langsmith:
+  enabled: true
+  project: "lex-discovery"
+  tags:
+    - "legal"
+    - "kenya"
+    - "discovery"
+
+api:
+  rate_limit: "30/minute"
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8000"
+    - "http://localhost:8080"   # Chainlit default port
+
+chainlit:
+  port: 8080
+  host: "0.0.0.0"
