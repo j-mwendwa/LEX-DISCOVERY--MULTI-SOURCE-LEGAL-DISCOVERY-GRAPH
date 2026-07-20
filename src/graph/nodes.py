@@ -13,19 +13,16 @@ Nodes:
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI  # kept for type compat
 from langgraph.types import interrupt
 
-from src.config import cfg, settings
-from src.core.exceptions import ExtractionError, HITLError
 from src.core.llm_factory import get_law_llm
 from src.core.logging import get_logger
-from src.core.tracing import get_callbacks
 from src.graph.state import CaseLawResult, ClientData, DiscoveryState
 
 log = get_logger(__name__)
@@ -57,7 +54,7 @@ Focus on: legal rights violated, applicable statutes, and the remedy sought.""",
 )
 
 
-def lead_attorney_ingestion(state: DiscoveryState) -> Dict[str, Any]:
+def lead_attorney_ingestion(state: DiscoveryState) -> dict[str, Any]:
     """
     Supervisor entry node.
     Validates the input, formulates the legal hypothesis, and sets routing.
@@ -108,7 +105,7 @@ def lead_attorney_ingestion(state: DiscoveryState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 2: Client Files Runner — invokes subgraph
 # ─────────────────────────────────────────────────────────────────────────────
-def client_files_runner(state: DiscoveryState) -> Dict[str, Any]:
+def client_files_runner(state: DiscoveryState) -> dict[str, Any]:
     """
     Invoke the Client Files subgraph with the provided file_path.
     Returns the extracted ClientData back into the main DiscoveryState.
@@ -118,8 +115,8 @@ def client_files_runner(state: DiscoveryState) -> Dict[str, Any]:
     # file_path is passed in via the initial state; default to sample data
     file_path = state.get("file_path", "data/uploads/lease.pdf")  # type: ignore[attr-defined]
 
-    from src.graph.subgraphs.client_files import client_files_subgraph
     from src.graph.state import ClientFilesState
+    from src.graph.subgraphs.client_files import client_files_subgraph
 
     subgraph_input: ClientFilesState = {
         "file_path": file_path,
@@ -128,7 +125,7 @@ def client_files_runner(state: DiscoveryState) -> Dict[str, Any]:
     }
 
     result = client_files_subgraph.invoke(subgraph_input)
-    client_data: Optional[ClientData] = result.get("client_data")
+    client_data: ClientData | None = result.get("client_data")
 
     if not client_data:
         log.error("client_files_extraction_returned_no_data")
@@ -163,15 +160,15 @@ def client_files_runner(state: DiscoveryState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3: Case Law Runner — invokes subgraph
 # ─────────────────────────────────────────────────────────────────────────────
-def case_law_runner(state: DiscoveryState) -> Dict[str, Any]:
+def case_law_runner(state: DiscoveryState) -> dict[str, Any]:
     """
     Invoke the Case Law Search subgraph with the current hypothesis.
     Returns the list of CaseLawResult back into the main DiscoveryState.
     """
     log.info("case_law_runner_started")
 
-    from src.graph.subgraphs.case_law import case_law_subgraph
     from src.graph.state import CaseLawState
+    from src.graph.subgraphs.case_law import case_law_subgraph
 
     subgraph_input: CaseLawState = {
         "query": state.get("hypothesis", ""),
@@ -180,7 +177,7 @@ def case_law_runner(state: DiscoveryState) -> Dict[str, Any]:
     }
 
     result = case_law_subgraph.invoke(subgraph_input)
-    results: List[CaseLawResult] = result.get("results", [])
+    results: list[CaseLawResult] = result.get("results", [])
 
     log.info("case_law_complete", precedents_found=len(results))
 
@@ -238,7 +235,7 @@ Identify all compliance gaps:""",
 )
 
 
-def cross_context_mapping(state: DiscoveryState) -> Dict[str, Any]:
+def cross_context_mapping(state: DiscoveryState) -> dict[str, Any]:
     """
     Compare client timeline + notice clauses against precedents to identify compliance gaps.
     """
@@ -271,13 +268,8 @@ def cross_context_mapping(state: DiscoveryState) -> Dict[str, Any]:
         )
 
         # Parse JSON array from LLM output
-        import re
-
         json_match = re.search(r"\[.*?\]", raw_output, re.DOTALL)
-        if json_match:
-            compliance_gaps = json.loads(json_match.group())
-        else:
-            compliance_gaps = [raw_output.strip()]
+        compliance_gaps = json.loads(json_match.group()) if json_match else [raw_output.strip()]
 
         log.info("compliance_gaps_identified", count=len(compliance_gaps))
 
@@ -302,7 +294,7 @@ def cross_context_mapping(state: DiscoveryState) -> Dict[str, Any]:
     }
 
 
-def _default_compliance_gaps(timeline: list, clauses: list) -> List[str]:
+def _default_compliance_gaps(timeline: list, clauses: list) -> list[str]:
     """Deterministic fallback gap analysis for offline/test scenarios."""
     gaps = []
     # Look for short notice in timeline
@@ -324,7 +316,7 @@ def _default_compliance_gaps(timeline: list, clauses: list) -> List[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 5: Human Review (HITL)
 # ─────────────────────────────────────────────────────────────────────────────
-def human_review(state: DiscoveryState) -> Dict[str, Any]:
+def human_review(state: DiscoveryState) -> dict[str, Any]:
     """
     Human-in-the-Loop node. Raises a LangGraph interrupt to pause the graph.
     Lead counsel reviews the compliance gaps and approves or rejects the findings.
@@ -410,7 +402,7 @@ Generate the final verdict memo:""",
 )
 
 
-def generate_verdict(state: DiscoveryState) -> Dict[str, Any]:
+def generate_verdict(state: DiscoveryState) -> dict[str, Any]:
     """Generate the final legal verdict memo after human approval."""
     log.info("verdict_generation_started")
 
@@ -485,7 +477,7 @@ The evidence supports a strong case for the tenant. Recommend immediate legal ac
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 7: Rejection Node
 # ─────────────────────────────────────────────────────────────────────────────
-def rejection_node(state: DiscoveryState) -> Dict[str, Any]:
+def rejection_node(state: DiscoveryState) -> dict[str, Any]:
     """
     Terminates the pipeline gracefully when input is invalid or counsel rejects.
     """

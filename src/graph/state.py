@@ -1,17 +1,23 @@
-from typing import TypedDict, Annotated, List, Dict, Optional
+from __future__ import annotations
+
+from typing import Annotated, TypedDict
+
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
+
 class ClientData(TypedDict):
-    metadata: Dict[str, str]
-    timeline: List[Dict[str, str]]
-    clauses: List[str]
+    metadata: dict[str, str]
+    timeline: list[dict[str, str]]
+    clauses: list[str]
+
 
 class CaseLawResult(TypedDict):
     title: str
     citation: str
     summary: str
     relevance_score: float
+
 
 class DiscoveryState(TypedDict, total=False):
     """
@@ -24,36 +30,38 @@ class DiscoveryState(TypedDict, total=False):
     file_path: str
 
     # Data extracted from client files (Phase 2)
-    client_data: Optional[ClientData]
+    client_data: ClientData | None
 
     # Results from precedent search (Phase 3)
-    case_law_results: Annotated[List[CaseLawResult], list]
+    case_law_results: Annotated[list[CaseLawResult], list]
 
     # Analysis result: gaps between client timeline and precedent (Phase 4)
-    compliance_gaps: Annotated[List[str], list]
+    compliance_gaps: Annotated[list[str], list]
 
     # Human approval flag (Phase 5)
     verdict_approved: bool
 
     # Standard conversation history
-    messages: Annotated[List[BaseMessage], add_messages]
+    messages: Annotated[list[BaseMessage], add_messages]
 
     # Internal routing/loop control
-    next_node: Optional[str]
+    next_node: str | None
     iteration: int
+
 
 class ClientFilesState(TypedDict):
     """
     State for the isolated Client Files subgraph.
     """
     file_path: str
-    client_data: Optional[ClientData]
-    messages: Annotated[List[BaseMessage], add_messages]
+    client_data: ClientData | None
+    messages: Annotated[list[BaseMessage], add_messages]
+
 
 class CaseLawState(TypedDict):
     """
     State for the isolated Case Law subgraph.
     """
     query: str
-    results: List[CaseLawResult]
-    messages: Annotated[List[BaseMessage], add_messages]
+    results: list[CaseLawResult]
+    messages: Annotated[list[BaseMessage], add_messages]

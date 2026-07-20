@@ -10,9 +10,7 @@ Persistence: AsyncSqliteSaver (async FastAPI path) / SqliteSaver (sync tests).
 """
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
-from typing import Optional
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, StateGraph

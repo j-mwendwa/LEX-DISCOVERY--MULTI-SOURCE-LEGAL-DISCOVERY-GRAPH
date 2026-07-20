@@ -1,8 +1,6 @@
 """
 tests/unit/test_knowledge_base.py — Unit tests for the knowledge base search tool.
 """
-import pytest
-
 from src.tools.knowledge_base import mock_qdrant_search
 
 

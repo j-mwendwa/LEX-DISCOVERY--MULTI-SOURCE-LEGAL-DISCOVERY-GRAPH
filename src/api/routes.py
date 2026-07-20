@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Annotated, Any
 
 import structlog
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -34,7 +34,7 @@ from src.api.schemas import (
     TimelineEvent,
     VersionResponse,
 )
-from src.config import cfg, settings
+from src.config import settings
 from src.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -95,7 +95,7 @@ async def start_discovery(
         )
 
     config = {"configurable": {"thread_id": thread_id}}
-    initial_state: Dict[str, Any] = {
+    initial_state: dict[str, Any] = {
         "messages": [HumanMessage(content=request_body.client_matter)],
         "hypothesis": "",
         "client_data": None,
@@ -109,11 +109,11 @@ async def start_discovery(
 
     try:
         # Stream events until the graph pauses at the HITL interrupt
-        result_state: Optional[Dict[str, Any]] = None
+        result_state: dict[str, Any] | None = None
         async for event in app.astream(initial_state, config=config):
             log.debug("graph_event", keys=list(event.keys()))
             # The last non-interrupt event holds the state
-            for node_name, node_output in event.items():
+            for _node_name, node_output in event.items():
                 if isinstance(node_output, dict):
                     result_state = node_output
 
@@ -187,7 +187,7 @@ async def get_discovery_status(
         messages = state.get("messages", [])
 
         # Extract final verdict from last AI message if complete
-        final_verdict: Optional[str] = None
+        final_verdict: str | None = None
         for msg in reversed(messages):
             if hasattr(msg, "name") and msg.name == "lead_attorney_verdict":
                 final_verdict = msg.content
@@ -265,22 +265,15 @@ async def approve_discovery(
                 ),
             )
 
-        # Resume graph with human verdict
-        human_verdict = {
-            "verdict_approved": approval.verdict_approved,
-            "counsel_notes": approval.counsel_notes or "",
-        }
-
-        final_state: Optional[Dict[str, Any]] = None
         async for event in app.astream(
             # Pass None to resume from interrupt; provide interrupt value via update_state
             None,
             config=config,
             stream_mode="updates",
         ):
-            for node_name, node_output in event.items():
+            for _node_name, node_output in event.items():
                 if isinstance(node_output, dict):
-                    final_state = node_output
+                    pass  # consume stream events
 
         # Inject the human verdict and resume
         await app.aupdate_state(
@@ -291,15 +284,15 @@ async def approve_discovery(
 
         # Re-stream to completion after state update
         async for event in app.astream(None, config=config):
-            for node_name, node_output in event.items():
+            for _node_name, node_output in event.items():
                 if isinstance(node_output, dict):
-                    final_state = node_output
+                    pass  # consume stream events
 
         # Get final verdict from snapshot
         final_snapshot = await app.aget_state(config)
         final_vals = final_snapshot.values if final_snapshot else {}
         messages = final_vals.get("messages", [])
-        verdict_text: Optional[str] = None
+        verdict_text: str | None = None
         for msg in reversed(messages):
             if hasattr(msg, "name") and msg.name == "lead_attorney_verdict":
                 verdict_text = msg.content
@@ -365,8 +358,8 @@ async def ingest_documents(body: IngestRequest) -> IngestResponse:
     dependencies=[Depends(require_api_key)],
 )
 async def ingest_upload(
-    file: UploadFile = File(...),
     collection_name: str = "case_law_precedents",
+    file: Annotated[UploadFile, File(...)] = ...,
 ) -> IngestResponse:
     """Upload a PDF then ingest it into Qdrant."""
     if not file.filename:
@@ -400,7 +393,7 @@ async def ingest_upload(
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
-def _infer_status(state: Dict[str, Any]) -> str:
+def _infer_status(state: dict[str, Any]) -> str:
     """Infer a human-readable pipeline status from the current state."""
     if state.get("verdict_approved") and state.get("compliance_gaps"):
         return "COMPLETE"

@@ -9,7 +9,6 @@ Provides:
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from src.core.logging import get_logger
 
@@ -20,7 +19,7 @@ def setup_langsmith(
     api_key: str = "",
     project: str = "lex-discovery",
     endpoint: str = "https://api.smith.langchain.com",
-    tags: Optional[list] = None,
+    tags: list | None = None,
 ) -> bool:
     """
     Enable LangSmith tracing if an API key is provided.
@@ -68,8 +67,8 @@ def get_tracer(run_name: str = "lex-discovery"):
     if not os.getenv("LANGCHAIN_API_KEY"):
         return None
     try:
-        from langsmith import Client
         from langchain.callbacks.tracers import LangChainTracer
+        from langsmith import Client
 
         return LangChainTracer(
             project_name=os.getenv("LANGCHAIN_PROJECT", "lex-discovery"),

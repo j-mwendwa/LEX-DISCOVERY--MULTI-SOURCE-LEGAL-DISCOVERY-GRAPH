@@ -13,7 +13,7 @@ via LlamaIndex. Use it for both ingestion and retrieval.
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import qdrant_client
 from llama_index.core.schema import TextNode
@@ -68,10 +68,10 @@ class QdrantVectorStoreWrapper:
     # ──────────────────────────────────────────────────────────────────────────
     def hybrid_search(
         self,
-        query_vector: List[float],
+        query_vector: list[float],
         query_text: str,
         top_k: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Execute an advanced hybrid search combining dense and sparse criteria.
 
@@ -97,9 +97,9 @@ class QdrantVectorStoreWrapper:
         # Execute query against LlamaIndex vector store abstraction
         query_result = self.store.query(query)
 
-        formatted_results: List[Dict[str, Any]] = []
+        formatted_results: list[dict[str, Any]] = []
         if query_result.nodes:
-            for node, score in zip(query_result.nodes, query_result.scores or []):
+            for node, score in zip(query_result.nodes, query_result.scores or [], strict=False):
                 formatted_results.append(
                     {
                         "id": node.node_id,
@@ -114,7 +114,7 @@ class QdrantVectorStoreWrapper:
     # ──────────────────────────────────────────────────────────────────────────
     # Upsert
     # ──────────────────────────────────────────────────────────────────────────
-    def upsert(self, points: List[Dict[str, Any]]) -> None:
+    def upsert(self, points: list[dict[str, Any]]) -> None:
         """
         Upsert a list of structured document points into the collection.
 
@@ -126,7 +126,7 @@ class QdrantVectorStoreWrapper:
         Args:
             points: List of point dicts conforming to the schema above.
         """
-        nodes: List[TextNode] = []
+        nodes: list[TextNode] = []
         for p in points:
             # Wrap standard points into LlamaIndex TextNodes
             node = TextNode(
@@ -171,7 +171,7 @@ def _get_qdrant_client() -> qdrant_client.QdrantClient:
 # Module-level factory (returns raw LlamaIndex store backed by project config)
 # ─────────────────────────────────────────────────────────────────────────────
 def get_llamaindex_vector_store(
-    collection_name: Optional[str] = None,
+    collection_name: str | None = None,
     enable_hybrid: bool = True,
 ) -> QdrantVectorStore:
     """
@@ -211,7 +211,7 @@ def get_llamaindex_vector_store(
 
 
 def get_wrapper(
-    collection_name: Optional[str] = None,
+    collection_name: str | None = None,
 ) -> QdrantVectorStoreWrapper:
     """
     Instantiate a ``QdrantVectorStoreWrapper`` backed by project config.
@@ -235,7 +235,7 @@ def get_wrapper(
 # ─────────────────────────────────────────────────────────────────────────────
 # VectorStoreIndex (for retrieval via LlamaIndex query engine)
 # ─────────────────────────────────────────────────────────────────────────────
-def get_vector_index(collection_name: Optional[str] = None):
+def get_vector_index(collection_name: str | None = None):
     """
     Load an existing LlamaIndex VectorStoreIndex from Qdrant.
 
@@ -246,7 +246,7 @@ def get_vector_index(collection_name: Optional[str] = None):
         from llama_index.core import VectorStoreIndex
         from llama_index.core.storage.storage_context import StorageContext
     except ImportError:
-        raise ImportError("Install: pip install llama-index-core")
+        raise ImportError("Install: pip install llama-index-core") from None
 
     store = get_llamaindex_vector_store(
         collection_name=collection_name, enable_hybrid=True
@@ -266,8 +266,8 @@ def get_vector_index(collection_name: Optional[str] = None):
 def hybrid_search_qdrant(
     query: str,
     top_k: int = 5,
-    collection_name: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    collection_name: str | None = None,
+) -> list[dict[str, Any]]:
     """
     Perform LlamaIndex-powered hybrid search against Qdrant Cloud.
 
@@ -297,7 +297,7 @@ def hybrid_search_qdrant(
             results=len(nodes),
         )
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for node in nodes:
             meta = node.metadata or {}
             results.append(
@@ -321,7 +321,7 @@ def hybrid_search_qdrant(
 # ─────────────────────────────────────────────────────────────────────────────
 # Ensure collection exists with hybrid config
 # ─────────────────────────────────────────────────────────────────────────────
-def ensure_hybrid_collection(collection_name: Optional[str] = None) -> None:
+def ensure_hybrid_collection(collection_name: str | None = None) -> None:
     """
     Create the Qdrant collection with dense + sparse vector config if it doesn't exist.
     Called automatically during ingestion.

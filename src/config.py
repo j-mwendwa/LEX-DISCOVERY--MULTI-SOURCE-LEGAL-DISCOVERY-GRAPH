@@ -8,13 +8,11 @@ Usage everywhere:
 """
 from __future__ import annotations
 
-import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List
 
 import yaml
-from pydantic import field_validator, model_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 _PROJECT_ROOT = Path(__file__).parent.parent
@@ -38,7 +36,7 @@ class Settings(BaseSettings):
     vector_backend: str = "qdrant"
 
     # Auth
-    allowed_api_keys: List[str] = ["dev-local-key"]
+    allowed_api_keys: list[str] = ["dev-local-key"]
     app_env: str = "development"
 
     # Memory
@@ -56,7 +54,7 @@ class Settings(BaseSettings):
         extra = "ignore"
 
     @model_validator(mode="after")
-    def _reject_default_key_in_production(self) -> "Settings":
+    def _reject_default_key_in_production(self) -> Settings:
         if self.app_env == "production" and "dev-local-key" in self.allowed_api_keys:
             raise ValueError(
                 "Production mode detected but default API key 'dev-local-key' is still set. "

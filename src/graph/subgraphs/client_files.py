@@ -11,8 +11,7 @@ On completion it returns a fully populated ClientData dict.
 """
 from __future__ import annotations
 
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -47,10 +46,10 @@ class LegalMetadata(BaseModel):
 
 class ExtractedLeaseData(BaseModel):
     metadata: LegalMetadata = Field(description="Key parties and property information")
-    timeline: List[TimelineEvent] = Field(
+    timeline: list[TimelineEvent] = Field(
         default_factory=list, description="Chronological list of key legal events"
     )
-    notice_clauses: List[str] = Field(
+    notice_clauses: list[str] = Field(
         default_factory=list,
         description="Verbatim notice-related clauses from the lease agreement",
     )
@@ -63,7 +62,7 @@ class ExtractedLeaseData(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 1: PDF Extraction
 # ─────────────────────────────────────────────────────────────────────────────
-def pdf_extraction_node(state: ClientFilesState) -> Dict[str, Any]:
+def pdf_extraction_node(state: ClientFilesState) -> dict[str, Any]:
     """
     Load and extract raw text from the client's PDF lease file.
     Uses LlamaIndex SimpleDirectoryReader; falls back to raw text on import error.
@@ -155,7 +154,7 @@ Analyse the provided lease document and extract:
 Be precise. Use ISO 8601 dates (YYYY-MM-DD). If a value is missing, use an empty string."""
 
 
-def metadata_extraction_node(state: ClientFilesState) -> Dict[str, Any]:
+def metadata_extraction_node(state: ClientFilesState) -> dict[str, Any]:
     """
     Use Gemini with structured output to extract lease metadata, timeline, and clauses.
     """

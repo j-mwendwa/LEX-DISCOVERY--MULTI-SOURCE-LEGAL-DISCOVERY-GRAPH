@@ -8,8 +8,6 @@ Provides:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
-
 from src.core.logging import get_logger
 from src.graph.state import CaseLawResult
 
@@ -34,7 +32,7 @@ def get_embedder():
 
     # Stub for offline / unit-test use
     class _StubEmbedder:
-        def get_text_embedding(self, text: str) -> List[float]:
+        def get_text_embedding(self, text: str) -> list[float]:
             # 384-dim deterministic pseudo-embedding
             h = hash(text)
             return [(h >> i & 1) * 0.1 for i in range(384)]
@@ -52,7 +50,7 @@ def qdrant_hybrid_search(
     qdrant_url: str = "",
     qdrant_api_key: str = "",
     collection_name: str = "case_law_precedents",
-) -> List[CaseLawResult]:
+) -> list[CaseLawResult]:
     """
     Perform hybrid (dense bge-small + sparse Qdrant/bm25) search via LlamaIndex.
 
@@ -68,7 +66,7 @@ def qdrant_hybrid_search(
 
         raw = hybrid_search_qdrant(query=query, top_k=top_k, collection_name=collection_name)
 
-        results: List[CaseLawResult] = []
+        results: list[CaseLawResult] = []
         for r in raw:
             results.append(
                 {
@@ -89,7 +87,7 @@ def qdrant_hybrid_search(
 # ─────────────────────────────────────────────────────────────────────────────
 # Mock search — offline / test fallback
 # ─────────────────────────────────────────────────────────────────────────────
-def mock_qdrant_search(query: str) -> List[CaseLawResult]:
+def mock_qdrant_search(query: str) -> list[CaseLawResult]:
     """
     Deterministic mock that returns Kenya-specific tenancy law precedents.
     Used in tests and when Qdrant is unavailable.

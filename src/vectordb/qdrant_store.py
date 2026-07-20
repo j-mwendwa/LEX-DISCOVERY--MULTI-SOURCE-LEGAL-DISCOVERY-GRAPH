@@ -8,7 +8,7 @@ Provides:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from src.core.exceptions import ConfigError, SearchError
 from src.core.logging import get_logger
@@ -46,7 +46,7 @@ class QdrantVectorStore:
             try:
                 from qdrant_client import QdrantClient
 
-                kwargs: Dict[str, Any] = {"url": self.url}
+                kwargs: dict[str, Any] = {"url": self.url}
                 if self.api_key:
                     kwargs["api_key"] = self.api_key
                 self._client = QdrantClient(**kwargs)
@@ -54,7 +54,7 @@ class QdrantVectorStore:
             except ImportError:
                 raise ConfigError(
                     "qdrant-client is not installed. Run: pip install qdrant-client"
-                )
+                ) from None
             except Exception as exc:
                 raise SearchError(f"Failed to connect to Qdrant at {self.url}: {exc}") from exc
         return self._client
@@ -100,11 +100,11 @@ class QdrantVectorStore:
     # ──────────────────────────────────────────────────────────────────────────
     def hybrid_search(
         self,
-        query_vector: List[float],
+        query_vector: list[float],
         query_text: str,
         top_k: int = 5,
         score_threshold: float = 0.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Perform hybrid (dense + sparse BM25) search and return ranked results.
 
@@ -122,7 +122,6 @@ class QdrantVectorStore:
             from qdrant_client.models import (
                 FusionQuery,
                 NamedSparseVector,
-                NamedVector,
                 Prefetch,
                 SparseVector,
             )
@@ -177,7 +176,7 @@ class QdrantVectorStore:
     # ──────────────────────────────────────────────────────────────────────────
     # Upsert
     # ──────────────────────────────────────────────────────────────────────────
-    def upsert(self, points: List[Dict[str, Any]]) -> None:
+    def upsert(self, points: list[dict[str, Any]]) -> None:
         """
         Upsert a list of points into the collection.
 
@@ -205,7 +204,7 @@ class QdrantVectorStore:
 # ─────────────────────────────────────────────────────────────────────────────
 # Minimal BM25 encoder (no external dependency)
 # ─────────────────────────────────────────────────────────────────────────────
-def _bm25_encode(text: str) -> tuple[List[int], List[float]]:
+def _bm25_encode(text: str) -> tuple[list[int], list[float]]:
     """
     Produce a sparse BM25 vector from raw text using simple term-frequency scoring.
     For production, replace with a proper BM25 tokeniser (e.g. rank_bm25).
@@ -221,7 +220,7 @@ def _bm25_encode(text: str) -> tuple[List[int], List[float]]:
     tf = Counter(tokens)
     total = len(tokens)
     # Unique sorted token indices (hash-based, deterministic)
-    vocab: Dict[str, int] = {}
+    vocab: dict[str, int] = {}
     for tok in sorted(tf.keys()):
         vocab[tok] = abs(hash(tok)) % (2**24)
 

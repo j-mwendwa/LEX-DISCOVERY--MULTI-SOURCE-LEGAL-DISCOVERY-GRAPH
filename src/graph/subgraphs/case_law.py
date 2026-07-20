@@ -10,7 +10,7 @@ The subgraph operates on CaseLawState (isolated from the main graph).
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -48,7 +48,7 @@ Output ONLY the queries, one per line, no numbering or preamble.""",
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 1: LLM Query Generation
 # ─────────────────────────────────────────────────────────────────────────────
-def query_generation_node(state: CaseLawState) -> Dict[str, Any]:
+def query_generation_node(state: CaseLawState) -> dict[str, Any]:
     """
     Refines the raw search query / legal hypothesis into targeted precedent search queries.
     """
@@ -86,7 +86,7 @@ def query_generation_node(state: CaseLawState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 2: Qdrant Hybrid Search
 # ─────────────────────────────────────────────────────────────────────────────
-def search_precedents_node(state: CaseLawState) -> Dict[str, Any]:
+def search_precedents_node(state: CaseLawState) -> dict[str, Any]:
     """
     Execute Qdrant hybrid search for each sub-query and aggregate results.
     """
@@ -101,7 +101,7 @@ def search_precedents_node(state: CaseLawState) -> Dict[str, Any]:
     # Split multi-query back into individual queries
     sub_queries = [q.strip() for q in state["query"].split(";") if q.strip()]
 
-    all_results: List[CaseLawResult] = []
+    all_results: list[CaseLawResult] = []
     seen_citations: set = set()
 
     for sq in sub_queries:
@@ -139,7 +139,7 @@ def search_precedents_node(state: CaseLawState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3: Re-ranking
 # ─────────────────────────────────────────────────────────────────────────────
-def rerank_node(state: CaseLawState) -> Dict[str, Any]:
+def rerank_node(state: CaseLawState) -> dict[str, Any]:
     """
     Re-rank results by relevance_score (descending) and cap at top_k.
     In production, replace with a cross-encoder (e.g. cross-encoder/ms-marco-MiniLM-L-6-v2).

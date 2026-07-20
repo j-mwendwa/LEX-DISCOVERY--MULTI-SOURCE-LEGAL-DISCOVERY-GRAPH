@@ -12,9 +12,6 @@ Usage:
 """
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import Any, Optional
-
 from src.config import cfg, settings
 from src.core.logging import get_logger
 
@@ -85,8 +82,8 @@ def get_langsmith_callbacks(run_name: str = "lex-discovery") -> list:
     if not settings.langsmith_api_key:
         return []
     try:
-        from langsmith import Client
         from langchain.callbacks.tracers import LangChainTracer
+        from langsmith import Client
 
         tracer = LangChainTracer(
             project_name=settings.langsmith_project,
@@ -104,7 +101,7 @@ def get_langsmith_callbacks(run_name: str = "lex-discovery") -> list:
 # ─────────────────────────────────────────────────────────────────────────────
 # Public factory
 # ─────────────────────────────────────────────────────────────────────────────
-def get_llm(temperature: Optional[float] = None, use_law_model: bool = True):
+def get_llm(temperature: float | None = None, use_law_model: bool = True):
     """
     Return the best available LLM.
 

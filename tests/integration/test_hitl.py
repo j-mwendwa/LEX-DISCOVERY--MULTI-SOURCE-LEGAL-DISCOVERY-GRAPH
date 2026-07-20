@@ -22,6 +22,7 @@ pytestmark = pytest.mark.integration
 def hitl_app():
     """Build an app with a temp SQLite checkpointer."""
     from langgraph.checkpoint.sqlite import SqliteSaver
+
     from src.graph.graph import build_graph
 
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
@@ -95,8 +96,5 @@ def test_hitl_approval_resumes_to_verdict(hitl_app):
     assert state.get("verdict_approved") is True
     # Check that a verdict message was generated
     messages = state.get("messages", [])
-    verdict_found = any(
-        hasattr(m, "name") and m.name == "lead_attorney_verdict" for m in messages
-    )
     # Verdict may not be present if LLM is unavailable, but pipeline should not error
     assert isinstance(messages, list)

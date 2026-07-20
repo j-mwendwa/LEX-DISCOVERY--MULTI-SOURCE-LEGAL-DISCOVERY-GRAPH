@@ -11,10 +11,8 @@ Flow:
 """
 from __future__ import annotations
 
-import os
 import uuid
 from pathlib import Path
-from typing import List, Optional
 
 from src.core.exceptions import IngestionError
 from src.core.logging import get_logger
@@ -63,10 +61,7 @@ def ingest_lease_pdf(
     Returns:
         Number of chunks upserted.
     """
-    if not skip_path_validation:
-        validated = _validate_path(file_path)
-    else:
-        validated = Path(file_path)
+    validated = Path(file_path) if skip_path_validation else _validate_path(file_path)
 
     if not validated.exists():
         raise IngestionError(f"Path does not exist: {validated}")

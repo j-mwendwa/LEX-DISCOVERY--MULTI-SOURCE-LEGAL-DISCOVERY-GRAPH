@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 from langchain_core.messages import HumanMessage
 
-from src.graph.state import CaseLawResult, ClientData, ClientFilesState, CaseLawState, DiscoveryState
+from src.graph.state import CaseLawState, ClientData, ClientFilesState, DiscoveryState
 
 
 # ─────────────────────────────────────────────────────────────────────────────

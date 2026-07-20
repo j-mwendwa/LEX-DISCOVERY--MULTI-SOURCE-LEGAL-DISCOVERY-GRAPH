@@ -6,6 +6,9 @@ Run with: pytest -m integration tests/integration/
 """
 from __future__ import annotations
 
+import os
+import tempfile
+
 import pytest
 from langchain_core.messages import HumanMessage
 
@@ -46,8 +49,8 @@ def test_graph_builds_without_error():
 @pytest.mark.integration
 def test_client_files_subgraph_produces_client_data(tmp_path):
     """Client files subgraph should extract ClientData from a sample text file."""
-    from src.graph.subgraphs.client_files import client_files_subgraph
     from src.graph.state import ClientFilesState
+    from src.graph.subgraphs.client_files import client_files_subgraph
 
     lease = tmp_path / "lease.txt"
     lease.write_text(
@@ -71,8 +74,8 @@ def test_client_files_subgraph_produces_client_data(tmp_path):
 @pytest.mark.integration
 def test_case_law_subgraph_returns_results():
     """Case law subgraph should return at least 1 result (mock fallback)."""
-    from src.graph.subgraphs.case_law import case_law_subgraph
     from src.graph.state import CaseLawState
+    from src.graph.subgraphs.case_law import case_law_subgraph
 
     state: CaseLawState = {
         "query": "insufficient eviction notice Kenya tenancy 18 days",
@@ -91,8 +94,8 @@ def test_graph_runs_to_hitl_interrupt(sample_initial_state):
     Verifies that hypothesis, client_data, and compliance_gaps are populated.
     """
     from langgraph.checkpoint.sqlite import SqliteSaver
+
     from src.graph.graph import build_graph
-    import tempfile, os
 
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = f.name

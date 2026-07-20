@@ -1,7 +1,6 @@
 """
 tests/unit/test_state.py — Unit tests for DiscoveryState and subgraph states.
 """
-import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.graph.state import CaseLawState, ClientFilesState, DiscoveryState

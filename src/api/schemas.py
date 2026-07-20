@@ -3,8 +3,6 @@ src/api/schemas.py — Pydantic request/response models for the LEX-DISCOVERY AP
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -20,12 +18,12 @@ class DiscoveryStartRequest(BaseModel):
         min_length=10,
         examples=["Tenant disputes 18-day eviction notice. Lease requires 30 days."],
     )
-    file_path: Optional[str] = Field(
+    file_path: str | None = Field(
         default=None,
         description="Absolute or relative path to the client's PDF lease file on the server.",
         examples=["data/uploads/lease_john_doe.pdf"],
     )
-    thread_id: Optional[str] = Field(
+    thread_id: str | None = Field(
         default=None,
         description="Optional thread ID to continue an existing discovery session.",
     )
@@ -36,7 +34,7 @@ class DiscoveryStartResponse(BaseModel):
 
     thread_id: str = Field(..., description="Unique ID for this discovery session.")
     status: str = Field(..., description="Current pipeline status.")
-    hypothesis: Optional[str] = Field(
+    hypothesis: str | None = Field(
         default=None, description="Formulated legal hypothesis."
     )
     message: str = Field(default="", description="Human-readable status message.")
@@ -67,13 +65,13 @@ class DiscoveryStatusResponse(BaseModel):
             "One of: RUNNING, AWAITING_REVIEW, APPROVED, REJECTED, COMPLETE, ERROR"
         ),
     )
-    hypothesis: Optional[str] = None
-    client_metadata: Optional[Dict[str, str]] = None
-    timeline: Optional[List[TimelineEvent]] = None
-    case_law_results: Optional[List[CaseLawResult]] = None
-    compliance_gaps: Optional[List[str]] = None
-    verdict_approved: Optional[bool] = None
-    final_verdict: Optional[str] = None
+    hypothesis: str | None = None
+    client_metadata: dict[str, str] | None = None
+    timeline: list[TimelineEvent] | None = None
+    case_law_results: list[CaseLawResult] | None = None
+    compliance_gaps: list[str] | None = None
+    verdict_approved: bool | None = None
+    final_verdict: str | None = None
     messages_count: int = 0
 
 
@@ -86,7 +84,7 @@ class ApprovalRequest(BaseModel):
     verdict_approved: bool = Field(
         ..., description="True to approve and generate final verdict; False to reject."
     )
-    counsel_notes: Optional[str] = Field(
+    counsel_notes: str | None = Field(
         default=None,
         description="Optional notes from lead counsel to include in the final verdict.",
     )
@@ -98,7 +96,7 @@ class ApprovalResponse(BaseModel):
     thread_id: str
     verdict_approved: bool
     status: str
-    final_verdict: Optional[str] = None
+    final_verdict: str | None = None
     message: str = ""
 
 
@@ -112,7 +110,7 @@ class IngestRequest(BaseModel):
         ...,
         description="Path to the PDF file or directory to ingest into Qdrant.",
     )
-    collection_name: Optional[str] = Field(
+    collection_name: str | None = Field(
         default="case_law_precedents",
         description="Target Qdrant collection.",
     )

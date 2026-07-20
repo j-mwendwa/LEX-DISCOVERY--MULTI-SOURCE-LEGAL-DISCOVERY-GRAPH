@@ -1,9 +1,6 @@
 """
 tests/unit/test_qdrant_store.py — Unit tests for the Qdrant vector store helper.
 """
-import math
-import pytest
-
 from src.vectordb.qdrant_store import _bm25_encode
 
 

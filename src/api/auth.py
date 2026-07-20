@@ -12,9 +12,8 @@ Keys are compared via SHA-256 hash to avoid timing attacks and plaintext logging
 from __future__ import annotations
 
 import hashlib
-from typing import Optional
 
-from fastapi import Depends, HTTPException, Request, Security, status
+from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
 
 from src.config import settings
@@ -32,7 +31,7 @@ def _sha256_prefix(key: str) -> str:
 
 async def require_api_key(
     request: Request,
-    api_key: Optional[str] = Security(_API_KEY_HEADER),
+    api_key: str | None = Security(_API_KEY_HEADER),
 ) -> None:
     """
     FastAPI dependency: validates the X-API-Key header.
