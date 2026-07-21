@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from operator import add
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import BaseMessage
@@ -34,10 +35,10 @@ class DiscoveryState(TypedDict, total=False):
     client_data: ClientData | None
 
     # Results from precedent search (Phase 3)
-    case_law_results: Annotated[list[CaseLawResult], list]
+    case_law_results: Annotated[list[CaseLawResult], add]
 
     # Analysis result: gaps between client timeline and precedent (Phase 4)
-    compliance_gaps: Annotated[list[str], list]
+    compliance_gaps: Annotated[list[str], add]
 
     # Human approval flag (Phase 5)
     verdict_approved: bool
