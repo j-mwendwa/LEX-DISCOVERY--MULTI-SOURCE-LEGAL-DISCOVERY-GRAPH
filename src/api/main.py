@@ -167,6 +167,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Root health/version endpoints (infrastructure probes, no API prefix)
+    @app.get("/health", tags=["System"])
+    async def root_health() -> dict[str, str]:
+        return {"status": "ok", "app_env": settings.app_env}
+
+    @app.get("/version", tags=["System"])
+    async def root_version() -> dict[str, str]:
+        return {"version": "1.0.0", "pipeline": "Multi-Source Legal Discovery Graph"}
+
     # Routes — all under /api/v1 prefix
     app.include_router(router, prefix="/api/v1")
 
