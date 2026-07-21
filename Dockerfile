@@ -99,14 +99,14 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Production: 4 Uvicorn workers (override via CMD / docker-compose)
-CMD ["uvicorn", "src.api.main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "${PORT:-8000}", \
-     "--workers", "1", \
-     "--access-log", \
-     "--proxy-headers", \
-     "--forwarded-allow-ips", "*"]
+# Production: single Uvicorn worker on $PORT (Render injects PORT at runtime)
+CMD uvicorn src.api.main:app \
+     --host 0.0.0.0 \
+     --port ${PORT:-8000} \
+     --workers 1 \
+     --access-log \
+     --proxy-headers \
+     --forwarded-allow-ips "*"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 4 — chainlit: production Chainlit UI image

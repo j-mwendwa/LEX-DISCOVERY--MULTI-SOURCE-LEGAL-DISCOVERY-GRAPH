@@ -368,8 +368,8 @@ jobs:
 
       - name: Wait for Render to boot
         run: |
-          echo "Sleeping 90 s while Render pulls and starts the image..."
-          sleep 90
+          echo "Sleeping 180 s while Render pulls image + downloads HF model..."
+          sleep 180
 
   # ═══════════════════════════════════════════════════════════════════════════
   # JOB 7 — Smoke Tests against Staging
@@ -381,18 +381,22 @@ jobs:
     if: needs.deploy-staging.result == 'success'
 
     steps:
-      - name: Health check — /health (retry × 5)
+      - name: Health check — /health (retry × 10)
         run: |
           STATUS="000"
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            STATUS=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" \
               https://lex-discovery-staging.onrender.com/health)
             echo "Attempt $i — HTTP $STATUS"
-            [ "$STATUS" = "200" ] && break
-            sleep 15
+            if [ "$STATUS" = "200" ]; then
+              echo "Health body: $(cat /tmp/health_body.txt)"
+              break
+            fi
+            echo "Response body: $(cat /tmp/health_body.txt)"
+            sleep 30
           done
           if [ "$STATUS" != "200" ]; then
-            echo "::error::Health check failed after 5 attempts (last HTTP $STATUS)"
+            echo "::error::Health check failed after 10 attempts (last HTTP $STATUS)"
             exit 1
           fi
 
@@ -438,17 +442,21 @@ jobs:
             -d "{\"imageUrl\":\"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}\"}"
 
       - name: Wait for production boot
-        run: sleep 120
+        run: sleep 180
 
-      - name: Production health check (retry × 5)
+      - name: Production health check (retry × 10)
         run: |
           STATUS="000"
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            STATUS=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" \
               https://lex-discovery.onrender.com/health)
             echo "Attempt $i — HTTP $STATUS"
-            [ "$STATUS" = "200" ] && break
-            sleep 20
+            if [ "$STATUS" = "200" ]; then
+              echo "Health body: $(cat /tmp/health_body.txt)"
+              break
+            fi
+            echo "Response body: $(cat /tmp/health_body.txt)"
+            sleep 30
           done
           if [ "$STATUS" != "200" ]; then
             echo "::error::Production health check FAILED (last HTTP $STATUS)"
