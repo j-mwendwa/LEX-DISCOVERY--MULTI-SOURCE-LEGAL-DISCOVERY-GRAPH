@@ -95,9 +95,9 @@ USER ${APP_USER}
 
 EXPOSE 8000
 
-# Liveness probe endpoint — FastAPI /health
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Liveness probe — must match the port uvicorn binds to
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Production: single Uvicorn worker on $PORT (Render injects PORT at runtime)
 CMD uvicorn src.api.main:app \
