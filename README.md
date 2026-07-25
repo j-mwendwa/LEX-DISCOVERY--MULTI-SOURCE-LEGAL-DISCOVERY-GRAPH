@@ -346,6 +346,13 @@ Copy `.env.example` to `.env` and fill in your values:
 | `LANGSMITH_API_KEY` | No | LangSmith observability API key |
 | `LANGSMITH_PROJECT` | No | LangSmith project name (default: `lex-discovery`) |
 | `LANGCHAIN_TRACING_V2` | No | `true` to enable LangSmith tracing |
+| `ACR_LOGIN_SERVER` | No | Azure Container Registry login server (e.g. `registry.azurecr.io`) |
+| `ACR_USERNAME` | No | ACR admin username (for Docker image push) |
+| `ACR_PASSWORD` | No | ACR admin password (for Docker image push) |
+| `AZURE_CLIENT_ID` | No | Azure AD app client ID for OIDC federated credential |
+| `AZURE_TENANT_ID` | No | Azure AD tenant ID |
+| `AZURE_SUBSCRIPTION_ID` | No | Azure subscription ID |
+| `AZURE_RESOURCE_GROUP` | No | Azure resource group for Container Apps |
 | `MEMORY_ENCRYPTION_KEY` | No | 32-byte base64 key for session memory encryption |
 
 > *At least one of `HF_API_KEY` or `GOOGLE_API_KEY` must be set. If HuggingFace is unavailable, the system automatically falls back to Gemini.
@@ -623,6 +630,77 @@ LANGSMITH_API_KEY=lsv2_...
 LANGCHAIN_TRACING_V2=true
 LANGSMITH_PROJECT=lex-discovery
 ```
+
+---
+
+## Deployment
+
+CI/CD is handled by GitHub Actions, building Docker images and deploying to Azure Container Apps (ACA).
+
+### Prerequisites
+
+1. Azure Container Registry (ACR) with admin user enabled
+2. Azure Container Apps environment in resource group `triage-rg`
+3. GitHub repository secrets configured (see below)
+
+### GitHub Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `HF_API_KEY` | HuggingFace API key |
+| `GOOGLE_API_KEY` | Google Gemini API key |
+| `QDRANT_URL` | Qdrant Cloud URL |
+| `QDRANT_API_KEY` | Qdrant Cloud API key |
+| `ALLOWED_API_KEYS` | JSON array of API keys |
+| `MEMORY_ENCRYPTION_KEY` | 32-byte base64 encryption key |
+| `ACR_LOGIN_SERVER` | ACR login server (e.g. `triageregistry2026.azurecr.io`) |
+| `ACR_USERNAME` | ACR admin username |
+| `ACR_PASSWORD` | ACR admin password |
+| `AZURE_CLIENT_ID` | Azure AD app client ID for OIDC federated credential |
+| `AZURE_TENANT_ID` | Azure AD tenant ID |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+| `AZURE_RESOURCE_GROUP` | Azure resource group (`triage-rg`) |
+| `AZURE_CONTAINERAPP_API_STAGING` | ACA app name for API (staging) |
+| `AZURE_CONTAINERAPP_API_PROD` | ACA app name for API (production) |
+| `AZURE_CONTAINERAPP_CHAINLIT_STAGING` | ACA app name for Chainlit UI (staging) |
+| `AZURE_CONTAINERAPP_CHAINLIT_PROD` | ACA app name for Chainlit UI (production) |
+
+### CI/CD Pipeline
+
+The workflow `.github/workflows/deploy.yml` runs on push to `main`/`develop` and on tags:
+
+1. **Quality**: `ruff` lint + `mypy` type-check
+2. **Test**: `pytest` with coverage (matrix: Python 3.11, 3.12)
+3. **Security**: Trivy filesystem scan
+4. **Build**: Docker multi-stage build → push to ACR (`api` + `chainlit` targets)
+5. **Sign**: Cosign keyless image signing (SLSA provenance via OIDC)
+6. **Deploy Staging**: Azure Container Apps deploy (staging environment, requires approval)
+7. **Smoke Test**: `/health`, `/docs`, `/api/v1/` checks against staging
+8. **Deploy Production**: Azure Container Apps deploy (production environment, requires tag or manual dispatch)
+9. **Notify**: Slack notification on success/failure
+
+### Azure OIDC Authentication
+
+The workflow uses `azure/login@v2` with OIDC federated credentials — no long-lived service principal secret is required for Azure ARM operations. ACR pushes still use the ACR admin username/password.
+
+To set up OIDC for your own fork:
+
+```bash
+# 1. Create Azure AD app
+az ad app create --display-name "lex-discovery-github-actions"
+
+# 2. Create federated credential for GitHub environment
+az ad app federated-credential create \
+  --id <app-object-id> \
+  --parameters '{
+    "name": "github-oidc-staging",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "subject": "repo:<owner>/<repo>:environment:staging",
+    "audiences": ["api://AzureADTokenExchange"]
+  }'
+```
+
+Repeat for `production`, `ref:refs/heads/main`, and `ref:refs/tags/v*` subjects as needed.
 
 ---
 
