@@ -690,12 +690,14 @@ To set up OIDC for your own fork:
 az ad app create --display-name "lex-discovery-github-actions"
 
 # 2. Create federated credential for GitHub environment
+# Note: GitHub Actions OIDC subjects include numeric user/repo IDs.
+# Verify the exact subject from the workflow OIDC payload before creating credentials.
 az ad app federated-credential create \
   --id <app-object-id> \
   --parameters '{
     "name": "github-oidc-staging",
     "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:<owner>/<repo>:environment:staging",
+    "subject": "repo:<owner>@<user-id>/<repo-name>@<repo-id>:environment:<env-name>",
     "audiences": ["api://AzureADTokenExchange"]
   }'
 ```
