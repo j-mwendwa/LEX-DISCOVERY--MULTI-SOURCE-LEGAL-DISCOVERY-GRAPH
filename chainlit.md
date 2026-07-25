@@ -1,4 +1,4 @@
-# LEX-DISCOVERY — Legal AI Assistant
+# LEX-DISCOVERY
 
 Welcome to **LEX-DISCOVERY**, your AI-powered multi-source legal discovery system.
 
