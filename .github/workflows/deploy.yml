@@ -480,7 +480,7 @@ jobs:
           registryPassword: ${{ secrets.ACR_PASSWORD }}
 
       - name: Deploy Chainlit UI → Azure Container Apps (Production)
-        if: ${{ secrets.AZURE_CONTAINERAPP_CHAINLIT_PROD != '' }}
+        if: secrets.AZURE_CONTAINERAPP_CHAINLIT_PROD != ''
         id: deploy-chainlit-prod
         uses: azure/container-apps-deploy-action@v2
         with:
