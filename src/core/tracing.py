@@ -105,9 +105,11 @@ def traceable(
         @traceable(name="node.lead_attorney_ingestion")
         async def lead_attorney_ingestion(state): ...
     """
+
     def decorator(fn):
         try:
             from langsmith import traceable as _ls_traceable  # type: ignore
+
             span_name = name or fn.__qualname__
             return _ls_traceable(name=span_name, run_type=run_type, **kwargs)(fn)
         except Exception:
