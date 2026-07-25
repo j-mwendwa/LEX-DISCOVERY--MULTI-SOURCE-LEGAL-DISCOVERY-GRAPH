@@ -22,6 +22,7 @@ from langgraph.graph import END, StateGraph
 from src.config import cfg, settings
 from src.core.exceptions import SearchError
 from src.core.logging import get_logger
+from src.core.tracing import traceable
 from src.graph.state import CaseLawResult, CaseLawState
 from src.tools.knowledge_base import qdrant_hybrid_search
 
@@ -49,6 +50,7 @@ Output ONLY the queries, one per line, no numbering or preamble.""",
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 1: LLM Query Generation
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="case_law.query_generation", run_type="llm")
 def query_generation_node(state: CaseLawState) -> dict[str, Any]:
     """
     Refines the raw search query / legal hypothesis into targeted precedent search queries.
@@ -85,6 +87,7 @@ def query_generation_node(state: CaseLawState) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 2: Qdrant Hybrid Search
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="case_law.search_precedents")
 def search_precedents_node(state: CaseLawState) -> dict[str, Any]:
     """
     Execute Qdrant hybrid search for each sub-query and aggregate results.
@@ -138,6 +141,7 @@ def search_precedents_node(state: CaseLawState) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3: Re-ranking
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="case_law.rerank")
 def rerank_node(state: CaseLawState) -> dict[str, Any]:
     """
     Re-rank results by relevance_score (descending) and cap at top_k.

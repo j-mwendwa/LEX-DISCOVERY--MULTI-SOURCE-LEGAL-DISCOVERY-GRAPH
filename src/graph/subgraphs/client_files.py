@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from src.config import cfg, settings
 from src.core.exceptions import ExtractionError, IngestionError
 from src.core.logging import get_logger
+from src.core.tracing import traceable
 from src.graph.state import ClientData, ClientFilesState
 
 log = get_logger(__name__)
@@ -63,6 +64,7 @@ class ExtractedLeaseData(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 1: PDF Extraction
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="client_files.pdf_extraction")
 def pdf_extraction_node(state: ClientFilesState) -> dict[str, Any]:
     """
     Load and extract raw text from the client's PDF lease file.
@@ -155,6 +157,7 @@ Analyse the provided lease document and extract:
 Be precise. Use ISO 8601 dates (YYYY-MM-DD). If a value is missing, use an empty string."""
 
 
+@traceable(name="client_files.metadata_extraction")
 def metadata_extraction_node(state: ClientFilesState) -> dict[str, Any]:
     """
     Use Gemini with structured output to extract lease metadata, timeline, and clauses.

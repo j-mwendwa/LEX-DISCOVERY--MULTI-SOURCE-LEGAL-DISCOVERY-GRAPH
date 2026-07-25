@@ -87,3 +87,32 @@ def get_callbacks(run_name: str = "lex-discovery") -> list:
     """Return a list of callbacks (tracer if configured, empty list otherwise)."""
     tracer = get_tracer(run_name)
     return [tracer] if tracer else []
+
+
+def traceable(
+    func=None,
+    *,
+    name: str | None = None,
+    run_type: str = "chain",
+    **kwargs,
+):
+    """
+    Decorator that wraps a function with a LangSmith trace span.
+    Falls back to a transparent no-op when LangSmith is unconfigured.
+
+    Usage::
+
+        @traceable(name="node.lead_attorney_ingestion")
+        async def lead_attorney_ingestion(state): ...
+    """
+    def decorator(fn):
+        try:
+            from langsmith import traceable as _ls_traceable  # type: ignore
+            span_name = name or fn.__qualname__
+            return _ls_traceable(name=span_name, run_type=run_type, **kwargs)(fn)
+        except Exception:
+            return fn
+
+    if func is not None:
+        return decorator(func)
+    return decorator

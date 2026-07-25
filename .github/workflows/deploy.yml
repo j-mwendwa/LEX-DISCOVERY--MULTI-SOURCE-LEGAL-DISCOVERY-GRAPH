@@ -5,9 +5,9 @@
 #   1. quality         — ruff lint + mypy type-check
 #   2. test            — unit tests with coverage (matrix: py3.11, py3.12)
 #   3. security        — Trivy filesystem scan
-#   4. build           — multi-target Docker build & push to GHCR
+#   4. build           — multi-target Docker build & push to ACR
 #   5. sign            — Cosign keyless image signing (SLSA provenance)
-#   6. deploy-staging  — Render deploy to staging
+#   6. deploy-staging  — Azure Container Apps deploy to staging
 #   7. smoke-test      — post-deploy liveness + API health checks
 #   8. deploy-prod     — Production deploy (manual approval gate)
 #   9. notify          — Slack notification on success or failure
@@ -19,11 +19,18 @@
 #   QDRANT_API_KEY          — Qdrant Cloud API key
 #   LANGSMITH_API_KEY       — LangSmith API key
 #   ALLOWED_API_KEYS        — JSON array of allowed API keys e.g. '["key1"]'
-#   MEMORY_ENCRYPTION_KEY   — 32-byte base64 encryption key
-#   RENDER_API_KEY          — Render platform API key
-#   RENDER_SERVICE_ID_STAGING — Render service ID for staging
-#   RENDER_SERVICE_ID_PROD    — Render service ID for production
-#   SLACK_WEBHOOK_URL       — Slack incoming webhook (optional)
+#   MEMORY_ENCRYPTION_KEY              — 32-byte base64 encryption key
+#   ACR_LOGIN_SERVER                   — Azure Container Registry login server (e.g. lexdiscoveryacr.azurecr.io)
+#   ACR_USERNAME                       — Service principal App ID (ACR push + ACA deploy)
+#   ACR_PASSWORD                       — Service principal client secret
+#   AZURE_TENANT_ID                    — Azure AD tenant ID
+#   AZURE_SUBSCRIPTION_ID              — Azure subscription ID
+#   AZURE_RESOURCE_GROUP               — Resource group containing the Container Apps
+#   AZURE_CONTAINERAPP_API_STAGING     — ACA app name for the API (staging)
+#   AZURE_CONTAINERAPP_API_PROD        — ACA app name for the API (production)
+#   AZURE_CONTAINERAPP_CHAINLIT_STAGING — ACA app name for the Chainlit UI (staging)
+#   AZURE_CONTAINERAPP_CHAINLIT_PROD    — ACA app name for the Chainlit UI (production)
+#   SLACK_WEBHOOK_URL                  — Slack incoming webhook (optional)
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: LEX-DISCOVERY CI/CD
@@ -57,8 +64,8 @@ concurrency:
 # Global environment
 # ─────────────────────────────────────────────────────────────────────────────
 env:
-  REGISTRY:       ghcr.io
-  IMAGE_NAME:     ${{ github.repository_owner }}/lex-discovery
+  REGISTRY:       ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_NAME:     lex-discovery
   PYTHON_VERSION: "3.11"
 
 defaults:
@@ -196,7 +203,6 @@ jobs:
       )
     permissions:
       contents:  read
-      packages:  write
       id-token:  write   # required for Cosign OIDC signing
       security-events: write  # required for upload-sarif
 
@@ -225,23 +231,16 @@ jobs:
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
-      # QEMU enables emulation so we can build arm64 on amd64 runners
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
-        # Skip login on fork PRs — they cannot read secrets
+      - name: Log in to Azure Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       # ── API image ──────────────────────────────────────────────────────────
       - name: Build and push API image
@@ -251,7 +250,7 @@ jobs:
           context:   .
           file:      ./Dockerfile
           target:    api
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           # Only push on non-PR events
           push:      ${{ github.event_name != 'pull_request' }}
           tags: |
@@ -271,7 +270,7 @@ jobs:
           context:   .
           file:      ./Dockerfile
           target:    chainlit
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push:      ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chainlit:${{ steps.meta.outputs.version }}
@@ -312,19 +311,18 @@ jobs:
       needs.build.outputs.api_digest != ''
     permissions:
       contents: read
-      packages: write
       id-token: write   # Sigstore OIDC
 
     steps:
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Log in to GHCR
+      - name: Log in to Azure Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       # Keyless signing: identity bound to the GitHub Actions OIDC token
       - name: Sign API image
@@ -355,21 +353,44 @@ jobs:
       )
     environment:
       name: staging
-      url:  https://lex-discovery-staging.onrender.com
+
+    outputs:
+      api_fqdn:      ${{ steps.deploy-api.outputs.fqdn }}
+      chainlit_fqdn: ${{ steps.deploy-chainlit.outputs.fqdn }}
 
     steps:
-      - name: Trigger Render staging deploy
-        run: |
-          curl -v -X POST \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_STAGING }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"imageUrl\":\"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}\"}"
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: >-
+            {
+              "clientId":       "${{ secrets.ACR_USERNAME }}",
+              "clientSecret":   "${{ secrets.ACR_PASSWORD }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId":       "${{ secrets.AZURE_TENANT_ID }}"
+            }
 
-      - name: Wait for Render to boot
-        run: |
-          echo "Sleeping 180 s while Render pulls image + downloads HF model..."
-          sleep 180
+      - name: Deploy API → Azure Container Apps (Staging)
+        id: deploy-api
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ secrets.AZURE_CONTAINERAPP_API_STAGING }}
+          resourceGroup:    ${{ secrets.AZURE_RESOURCE_GROUP }}
+          imageToDeploy:    ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}
+          registryUrl:      ${{ env.REGISTRY }}
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy Chainlit UI → Azure Container Apps (Staging)
+        id: deploy-chainlit
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ secrets.AZURE_CONTAINERAPP_CHAINLIT_STAGING }}
+          resourceGroup:    ${{ secrets.AZURE_RESOURCE_GROUP }}
+          imageToDeploy:    ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chainlit:${{ needs.build.outputs.image_tag }}
+          registryUrl:      ${{ env.REGISTRY }}
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
 
   # ═══════════════════════════════════════════════════════════════════════════
   # JOB 7 — Smoke Tests against Staging
@@ -382,11 +403,13 @@ jobs:
 
     steps:
       - name: Health check — /health (retry × 10)
+        env:
+          STAGING_URL: https://${{ needs.deploy-staging.outputs.api_fqdn }}
         run: |
           STATUS="000"
           for i in 1 2 3 4 5 6 7 8 9 10; do
             STATUS=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" \
-              https://lex-discovery-staging.onrender.com/health)
+              "${STAGING_URL}/health")
             echo "Attempt $i — HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Health body: $(cat /tmp/health_body.txt)"
@@ -401,14 +424,18 @@ jobs:
           fi
 
       - name: Docs reachable — /docs
+        env:
+          STAGING_URL: https://${{ needs.deploy-staging.outputs.api_fqdn }}
         run: |
-          curl -sf https://lex-discovery-staging.onrender.com/docs \
+          curl -sf "${STAGING_URL}/docs" \
             -o /dev/null -w "GET /docs → HTTP %{http_code}\n"
 
       - name: API v1 root — /api/v1/
         # Allowed to fail (depends on API key config in staging)
+        env:
+          STAGING_URL: https://${{ needs.deploy-staging.outputs.api_fqdn }}
         run: |
-          curl -s https://lex-discovery-staging.onrender.com/api/v1/ \
+          curl -s "${STAGING_URL}/api/v1/" \
             -o /dev/null -w "GET /api/v1/ → HTTP %{http_code}\n" || true
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -419,7 +446,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, smoke-test]
     if: |
-      needs.build.result     == 'success' &&
+      needs.build.result      == 'success' &&
       needs.smoke-test.result == 'success' &&
       (
         startsWith(github.ref, 'refs/tags/v') ||
@@ -427,29 +454,52 @@ jobs:
       )
     environment:
       name: production
-      url:  https://lex-discovery.onrender.com
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Trigger Render production deploy
-        run: |
-          curl -v -X POST \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_PROD }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"imageUrl\":\"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}\"}"
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: >-
+            {
+              "clientId":       "${{ secrets.ACR_USERNAME }}",
+              "clientSecret":   "${{ secrets.ACR_PASSWORD }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId":       "${{ secrets.AZURE_TENANT_ID }}"
+            }
 
-      - name: Wait for production boot
-        run: sleep 180
+      - name: Deploy API → Azure Container Apps (Production)
+        id: deploy-api-prod
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ secrets.AZURE_CONTAINERAPP_API_PROD }}
+          resourceGroup:    ${{ secrets.AZURE_RESOURCE_GROUP }}
+          imageToDeploy:    ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}
+          registryUrl:      ${{ env.REGISTRY }}
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy Chainlit UI → Azure Container Apps (Production)
+        id: deploy-chainlit-prod
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ secrets.AZURE_CONTAINERAPP_CHAINLIT_PROD }}
+          resourceGroup:    ${{ secrets.AZURE_RESOURCE_GROUP }}
+          imageToDeploy:    ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-chainlit:${{ needs.build.outputs.image_tag }}
+          registryUrl:      ${{ env.REGISTRY }}
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
 
       - name: Production health check (retry × 10)
+        env:
+          PROD_URL: https://${{ steps.deploy-api-prod.outputs.fqdn }}
         run: |
           STATUS="000"
           for i in 1 2 3 4 5 6 7 8 9 10; do
             STATUS=$(curl -s -o /tmp/health_body.txt -w "%{http_code}" \
-              https://lex-discovery.onrender.com/health)
+              "${PROD_URL}/health")
             echo "Attempt $i — HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Health body: $(cat /tmp/health_body.txt)"
@@ -471,7 +521,7 @@ jobs:
           body: |
             ## 🚀 LEX-DISCOVERY ${{ github.ref_name }}
 
-            **Docker images pushed to GHCR:**
+            **Docker images pushed to ACR:**
             | Target   | Image |
             |----------|-------|
             | API      | `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ needs.build.outputs.image_tag }}` |
@@ -482,6 +532,7 @@ jobs:
             API:      ${{ needs.build.outputs.api_digest }}
             Chainlit: ${{ needs.build.outputs.chainlit_digest }}
             ```
+
 
   # ═══════════════════════════════════════════════════════════════════════════
   # JOB 9 — Slack Notification (always runs on non-PR events)

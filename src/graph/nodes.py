@@ -24,6 +24,7 @@ from langgraph.types import interrupt
 
 from src.core.llm_factory import get_law_llm
 from src.core.logging import get_logger
+from src.core.tracing import traceable
 from src.graph.state import CaseLawResult, ClientData, DiscoveryState
 
 log = get_logger(__name__)
@@ -55,6 +56,7 @@ Focus on: legal rights violated, applicable statutes, and the remedy sought.""",
 )
 
 
+@traceable(name="node.lead_attorney_ingestion")
 def lead_attorney_ingestion(state: DiscoveryState) -> dict[str, Any]:
     """
     Supervisor entry node.
@@ -106,6 +108,7 @@ def lead_attorney_ingestion(state: DiscoveryState) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 2: Client Files Runner — invokes subgraph
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="node.client_files_runner")
 def client_files_runner(state: DiscoveryState) -> dict[str, Any]:
     """
     Invoke the Client Files subgraph with the provided file_path.
@@ -161,6 +164,7 @@ def client_files_runner(state: DiscoveryState) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3: Case Law Runner — invokes subgraph
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="node.case_law_runner")
 def case_law_runner(state: DiscoveryState) -> dict[str, Any]:
     """
     Invoke the Case Law Search subgraph with the current hypothesis.
@@ -238,6 +242,7 @@ Identify all compliance gaps:""",
 )
 
 
+@traceable(name="node.cross_context_mapping", run_type="llm")
 def cross_context_mapping(state: DiscoveryState) -> dict[str, Any]:
     """
     Compare client timeline + notice clauses against precedents to identify compliance gaps.
@@ -317,6 +322,7 @@ def _default_compliance_gaps(timeline: list, clauses: list) -> list[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 5: Human Review (HITL)
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="node.human_review")
 def human_review(state: DiscoveryState) -> dict[str, Any]:
     """
     Human-in-the-Loop node. Raises a LangGraph interrupt to pause the graph.
@@ -407,6 +413,7 @@ Generate the final verdict memo:""",
 )
 
 
+@traceable(name="node.generate_verdict", run_type="llm")
 def generate_verdict(state: DiscoveryState) -> dict[str, Any]:
     """Generate the final legal verdict memo after human approval."""
     log.info("verdict_generation_started")
@@ -482,6 +489,7 @@ The evidence supports a strong case for the tenant. Recommend immediate legal ac
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 7: Rejection Node
 # ─────────────────────────────────────────────────────────────────────────────
+@traceable(name="node.rejection")
 def rejection_node(state: DiscoveryState) -> dict[str, Any]:
     """
     Terminates the pipeline gracefully when input is invalid or counsel rejects.
